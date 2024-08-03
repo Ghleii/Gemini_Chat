@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  geminiweb:
+    build: .
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    command: python gemini_web_app.py
