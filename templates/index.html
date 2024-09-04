@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemini Chat</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+   
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -80,6 +82,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="chat-container">
         <div class="chat-header">Gemini Chat</div>
@@ -91,8 +94,6 @@
     </div>
 
     <script>
-        // マークダウンのサニタイズ設定（前のコードは省略）
-
         // ページ読み込み時に初期メッセージを取得
         window.onload = function() {
             fetchInitialMessage();
@@ -114,66 +115,36 @@
         }
 
         function sendMessage() {
-            // 既存のsendMessage関数のコード（変更なし）
-        }
-
-        function displayMessage(sender, message, className) {
-            // 既存のdisplayMessage関数のコード（変更なし）
-        }
-    </script>
-</body>
-</html>
-
-    <script>
-        // マークダウンのサニタイズ設定
-        marked.setOptions({
-            sanitize: true,
-            sanitizer: function (html) {
-                return DOMPurify.sanitize(html);
-            }
-        });
-
-
-        // ページ読み込み時に初期メッセージを取得
-        window.onload = function() {
-            fetchInitialMessage();
-        };
-
-        function fetchInitialMessage() {
-            axios.get('/initial_message')
-                .then(function (response) {
-                    if (response.data.error) {
-                        displayMessage('Error', response.data.error, 'gemini-message');
-                    } else {
-                        displayMessage('ミカン', response.data.response, 'gemini-message');
-                    }
-                })
-                .catch(function (error) {
-                    console.error('Error:', error);
-                    displayMessage('Error', 'Unable to get initial message from server', 'gemini-message');
-                });
-        }
-
-
-        function sendMessage() {
             const userInput = document.getElementById('user-input');
             const message = userInput.value;
             userInput.value = '';
 
+            // CSRFトークンの取得
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // ユーザーのメッセージを表示
             displayMessage('User', message, 'user-message');
 
-            axios.post('/chat', { message: message })
-                .then(function (response) {
-                    if (response.data.error) {
-                        displayMessage('Error', response.data.error, 'gemini-message');
-                    } else {
-                        displayMessage('ミカン', response.data.response, 'gemini-message');
-                    }
-                })
-                .catch(function (error) {
-                    console.error('Error:', error);
-                    displayMessage('Error', 'Unable to get response from server', 'gemini-message');
-                });
+            // メッセージをサーバーに送信
+            axios.post('/chat', {
+                message: message,
+                csrf_token: csrfToken
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function (response) {
+                if (response.data.error) {
+                    displayMessage('Error', response.data.error, 'gemini-message');
+                } else {
+                    displayMessage('Gemini', response.data.response, 'gemini-message');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                displayMessage('Error', 'Unable to get response from server', 'gemini-message');
+            });
         }
 
         function displayMessage(sender, message, className) {
